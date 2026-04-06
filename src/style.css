@@ -1,0 +1,139 @@
+:root {
+  --primary: #CCFF00;
+  --primary-dark: #A3CC00;
+  --secondary: #000000;
+  --bg-desktop: #000000;
+  --bg-mobile: #0A0A0A;
+  --surface: #1A1A1A;
+  --border: #2A2A2A;
+  --text-main: #FFFFFF;
+  --text-muted: #A0A0A0;
+  --white: #ffffff;
+  
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --phone-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  background-color: var(--bg-desktop);
+  
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: var(--bg-desktop);
+}
+
+#app {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  height: 100dvh;
+  background-color: var(--bg-mobile);
+  margin: 0 auto;
+  box-shadow: var(--phone-shadow);
+  display: flex;
+  flex-direction: column; /* Flex Column Strategy */
+  overflow: hidden; /* Main app no longer scrolls */
+  position: relative;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.scroll-container {
+  flex: 1; /* Fills remaining space */
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* Scrollbar styling for Dark Mode */
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-container::-webkit-scrollbar-track {
+  background: var(--bg-mobile);
+}
+.scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+h1, h2, h3 {
+  color: var(--text-main);
+  line-height: 1.1;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: var(--text-muted);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: black;
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+  filter: brightness(0.9);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--white);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:active {
+  transform: scale(0.96);
+  background: var(--border);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(204, 255, 0, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(204, 255, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(204, 255, 0, 0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
