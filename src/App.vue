@@ -2,6 +2,10 @@
 import { ref } from 'vue';
 import TopNav from './components/TopNav.vue';
 import BottomNav from './components/BottomNav.vue';
+import LoginPage from './components/LoginPage.vue';
+
+// Authentication State
+const isAuthenticated = ref(false);
 
 const currentTab = ref('home');
 const isOnline = ref(true);
@@ -13,68 +17,79 @@ const recentActivity = ref([
   { time: '13:30', text: 'Pesanan #205 diterima', type: 'info' },
   { time: '13:15', text: 'Stok Espresso habis', type: 'warning' },
 ]);
+
+const handleLoginSuccess = () => {
+  isAuthenticated.value = true;
+};
 </script>
 
 <template>
-  <!-- Persistent Top Navigation -->
-  <TopNav :is-online="isOnline" />
+  <template v-if="isAuthenticated">
+    <!-- Persistent Top Navigation -->
+    <TopNav :is-online="isOnline" />
 
-  <!-- Main structural components -->
-  <div class="scroll-container" id="main-scroll">
-    <div class="page-container animate-slide-up">
-      <!-- Grouped Sales & Balance Summary -->
-      <section class="dashboard-summary">
-        <div class="summary-card main-highlight">
-          <div class="card-header">
-            <span class="card-label">PENJUALAN HARI INI</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-          </div>
-          <div class="card-body">
-            <span class="main-value">{{ salesToday }}</span>
-            <span class="sub-detail">+12.5% MINGGU INI</span>
-          </div>
-        </div>
-        
-        <div class="summary-card secondary-highlight">
-          <span class="card-label">SALDO DOMPET</span>
-          <span class="secondary-value">{{ todayBalance }}</span>
-        </div>
-      </section>
-
-      <!-- Quick Actions Control Section -->
-      <section class="control-section">
-        <h2 class="section-title">KONTROL TRANSAKSI</h2>
-        <div class="main-actions">
-          <button class="btn btn-primary lg">PESANAN BARU</button>
-          <button class="btn btn-secondary lg">KELOLA STOK</button>
-        </div>
-      </section>
-
-      <!-- Visual Activity Feed Section -->
-      <section class="activity-section">
-        <div class="section-header">
-          <h3 class="small-title">AKTIVITAS TERBARU</h3>
-          <a href="#" class="view-all">LIHAT SEMUA</a>
-        </div>
-        <div class="activity-list">
-          <div v-for="item in recentActivity" :key="item.time" class="activity-card" :class="item.type">
-            <div class="activity-icon-container">
-              <svg v-if="item.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <svg v-if="item.type === 'info'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-              <svg v-if="item.type === 'warning'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    <!-- Main structural components -->
+    <div class="scroll-container" id="main-scroll">
+      <div class="page-container animate-slide-up">
+        <!-- Grouped Sales & Balance Summary -->
+        <section class="dashboard-summary">
+          <div class="summary-card main-highlight">
+            <div class="card-header">
+              <span class="card-label">PENJUALAN HARI INI</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
             </div>
-            <div class="activity-content">
-              <span class="activity-text">{{ item.text }}</span>
-              <span class="activity-time">{{ item.time }}</span>
+            <div class="card-body">
+              <span class="main-value">{{ salesToday }}</span>
+              <span class="sub-detail">+12.5% MINGGU INI</span>
             </div>
           </div>
-        </div>
-      </section>
+          
+          <div class="summary-card secondary-highlight">
+            <span class="card-label">SALDO DOMPET</span>
+            <span class="secondary-value">{{ todayBalance }}</span>
+          </div>
+        </section>
+
+        <!-- Quick Actions Control Section -->
+        <section class="control-section">
+          <h2 class="section-title">KONTROL TRANSAKSI</h2>
+          <div class="main-actions">
+            <button class="btn btn-primary lg">PESANAN BARU</button>
+            <button class="btn btn-secondary lg">KELOLA STOK</button>
+          </div>
+        </section>
+
+        <!-- Visual Activity Feed Section -->
+        <section class="activity-section">
+          <div class="section-header">
+            <h3 class="small-title">AKTIVITAS TERBARU</h3>
+            <a href="#" class="view-all">LIHAT SEMUA</a>
+          </div>
+          <div class="activity-list">
+            <div v-for="item in recentActivity" :key="item.time" class="activity-card" :class="item.type">
+              <div class="activity-icon-container">
+                <svg v-if="item.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg v-if="item.type === 'info'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <svg v-if="item.type === 'warning'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </div>
+              <div class="activity-content">
+                <span class="activity-text">{{ item.text }}</span>
+                <span class="activity-time">{{ item.time }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
-  </div>
 
-  <!-- Persistent Bottom Navigation -->
-  <BottomNav v-model="currentTab" />
+    <!-- Persistent Bottom Navigation -->
+    <BottomNav v-model="currentTab" />
+  </template>
+
+  <!-- Login View -->
+  <template v-else>
+    <LoginPage @login-success="handleLoginSuccess" />
+  </template>
 </template>
 
 <style scoped>
