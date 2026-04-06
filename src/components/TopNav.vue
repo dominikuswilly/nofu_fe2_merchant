@@ -11,9 +11,9 @@
         <span class="status-label">{{ isOnline ? 'AKTIF' : 'OFFLINE' }}</span>
       </div>
       
-      <!-- Profile Action -->
-      <button class="profile-btn" aria-label="Profil">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <!-- Logout Action -->
+      <button class="logout-btn" aria-label="Logout" @click="emit('logout')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
       </button>
     </div>
   </header>
@@ -26,6 +26,8 @@ defineProps({
     default: true
   }
 });
+
+const emit = defineEmits(['logout']);
 </script>
 
 <style scoped>
@@ -88,20 +90,22 @@ defineProps({
   color: var(--white);
 }
 
-.profile-btn {
-  background: none;
-  border: none;
-  color: var(--white);
+.logout-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #EF4444;
   padding: 8px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
-.profile-btn:active {
-  opacity: 0.6;
+.logout-btn:active {
+  transform: scale(0.9);
+  background: rgba(239, 68, 68, 0.2);
 }
 
 @keyframes pulse {

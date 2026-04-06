@@ -119,12 +119,18 @@ const handleReportInvalid = ({ item, qty, reason }) => {
 const handleLoginSuccess = () => {
   isAuthenticated.value = true;
 };
+
+const handleLogout = () => {
+  isAuthenticated.value = false;
+  currentTab.value = 'home';
+  cart.value = []; // Clear cart on logout
+};
 </script>
 
 <template>
   <template v-if="isAuthenticated">
     <!-- Persistent Top Navigation -->
-    <TopNav :is-online="isOnline" />
+    <TopNav :is-online="isOnline" @logout="handleLogout" />
 
     <!-- Main structural components -->
     <div class="scroll-container" id="main-scroll">
