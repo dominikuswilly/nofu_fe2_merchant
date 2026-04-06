@@ -4,6 +4,7 @@ import TopNav from './components/TopNav.vue';
 import BottomNav from './components/BottomNav.vue';
 import LoginPage from './components/LoginPage.vue';
 import OrderPage from './components/OrderPage.vue';
+import StockPage from './components/StockPage.vue';
 
 // Authentication State
 const isAuthenticated = ref(false);
@@ -23,6 +24,14 @@ const recentActivity = ref([
 const cart = ref([]);
 const showCheckout = ref(false);
 const processing = ref(false);
+
+// CENTRALIZED INVENTORY STATE (Coffee Cart Specific)
+const inventory = ref([
+    { id: 1, name: 'Biji Espresso', current: 1.2, max: 2.0, unit: 'kg', step: 0.1, quickStep: 0.5 },
+    { id: 2, name: 'Susu Segar', current: 3, max: 10, unit: 'Liter', step: 1, quickStep: 1.0 },
+    { id: 3, name: 'Paper Cups (L)', current: 12, max: 50, unit: 'Pcs', step: 1, quickStep: 10 },
+    { id: 4, name: 'Es Batu', current: 0.5, max: 5.0, unit: 'kg', step: 0.5, quickStep: 1.0 },
+]);
 
 const cartCount = computed(() => {
   return cart.value.reduce((acc, item) => acc + item.qty, 0);
@@ -70,6 +79,25 @@ const processCheckout = () => {
   }, 1500);
 };
 
+// INVENTORY ACTIONS
+const updateStock = (id, amount) => {
+    const item = inventory.value.find(i => i.id === id);
+    if (item) {
+        item.current = Math.max(0, Math.min(item.max, Number((item.current + amount).toFixed(2))));
+    }
+};
+
+const refillDailyKit = () => {
+    inventory.value.forEach(item => {
+        item.current = item.max;
+    });
+    recentActivity.value.unshift({
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: 'Stok Harian (Daily Kit) telah diisi ulang',
+      type: 'info'
+    });
+};
+
 const handleLoginSuccess = () => {
   isAuthenticated.value = true;
 };
@@ -109,7 +137,7 @@ const handleLoginSuccess = () => {
           <h2 class="section-title">KONTROL TRANSAKSI</h2>
           <div class="main-actions">
             <button @click="currentTab = 'orders'" class="btn btn-primary lg">PESANAN BARU</button>
-            <button class="btn btn-secondary lg">KELOLA STOK</button>
+            <button @click="currentTab = 'menu'" class="btn btn-secondary lg">KELOLA STOK</button>
           </div>
         </section>
 
@@ -135,13 +163,22 @@ const handleLoginSuccess = () => {
         </section>
       </div>
 
-      <!-- ORDERS TAB CONTENT ONLY -->
+      <!-- ORDERS TAB -->
       <div v-else-if="currentTab === 'orders'" class="page-container animate-slide-up">
         <OrderPage 
           :cart="cart" 
           @add="addToCart" 
           @remove="removeFromCart"
         />
+      </div>
+
+      <!-- STOCK TAB -->
+      <div v-else-if="currentTab === 'menu'" class="page-container animate-slide-up">
+          <StockPage 
+            :inventory="inventory" 
+            @update="updateStock" 
+            @refill-kit="refillDailyKit"
+          />
       </div>
 
       <!-- OTHER TABS (Placeholders) -->
@@ -153,8 +190,7 @@ const handleLoginSuccess = () => {
       </div>
     </div>
 
-    <!-- FLOATING CART AS FLEX SIBLING -->
-    <!-- This ensures it's always above the BottomNav using structural layout -->
+    <!-- FLOATING CART -->
     <Transition name="cart-slide">
       <div v-if="cartCount > 0 && currentTab === 'orders'" class="floating-cart-wrapper" @click="showCheckout = true">
         <div class="floating-cart">
@@ -208,6 +244,7 @@ const handleLoginSuccess = () => {
 </template>
 
 <style scoped>
+/* Scoped Styles for App.vue derived from global mobile aesthetics */
 .page-container {
   padding: 24px 20px 40px;
   display: flex;
@@ -225,7 +262,6 @@ const handleLoginSuccess = () => {
   text-align: center;
 }
 
-/* Floating Cart as Structural Sibling */
 .floating-cart-wrapper {
   padding: 10px 20px;
   background: var(--bg-mobile);
@@ -246,20 +282,14 @@ const handleLoginSuccess = () => {
   border-radius: 8px;
 }
 
-.cart-details {
-  display: flex;
-  flex-direction: column;
-}
-
+.cart-details { display: flex; flex-direction: column; }
 .total-qty { font-size: 0.65rem; font-weight: 900; opacity: 0.7; }
 .total-price { font-size: 1.2rem; font-weight: 900; }
 .checkout-now-btn { font-size: 0.9rem; font-weight: 900; letter-spacing: 0.05em; background: none; color: black; border: none; padding: 0; }
 
-/* Transitions */
 .cart-slide-enter-active, .cart-slide-leave-active { transition: all 0.3s ease-out; }
 .cart-slide-enter-from, .cart-slide-leave-to { transform: translateY(100%); opacity: 0; }
 
-/* Checkout Overlay Style */
 .checkout-overlay {
   position: fixed;
   inset: 0;
@@ -282,199 +312,50 @@ const handleLoginSuccess = () => {
   gap: 32px;
 }
 
-.sheet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
+.sheet-header { display: flex; justify-content: space-between; align-items: center; }
 .sheet-title { font-size: 1.2rem; }
 .close-sheet { background: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 900; }
 
-.order-summary-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-height: 40vh;
-  overflow-y: auto;
-}
-
-.receipt-item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  font-weight: 700;
-  color: var(--white);
-}
-
+.order-summary-list { display: flex; flex-direction: column; gap: 16px; max-height: 40vh; overflow-y: auto; }
+.receipt-item { display: flex; gap: 12px; align-items: center; font-weight: 700; color: var(--white); }
 .r-qty { color: var(--primary); width: 30px; }
 .r-name { flex: 1; }
 .r-price { opacity: 0.8; }
 
-.final-checkout-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  border-top: 1px solid var(--border);
-  padding-top: 24px;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
+.final-checkout-section { display: flex; flex-direction: column; gap: 20px; border-top: 1px solid var(--border); padding-top: 24px; }
+.total-row { display: flex; justify-content: space-between; align-items: center; }
 .total-row .label { font-size: 0.8rem; font-weight: 900; color: var(--text-muted); }
 .total-row .value { font-size: 1.8rem; font-weight: 900; color: var(--white); }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-/* Dashboard Summary Boxes */
-.dashboard-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+/* Dashboard UI Parts */
+.dashboard-summary { display: flex; flex-direction: column; gap: 16px; }
+.summary-card { padding: 24px; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; }
+.main-highlight { border-left: 6px solid var(--primary); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-label { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); letter-spacing: 0.1em; }
+.main-value { font-size: 2.2rem; font-weight: 900; color: var(--white); line-height: 1; }
+.sub-detail { display: block; font-size: 0.65rem; font-weight: 900; color: var(--primary); margin-top: 8px; }
+.secondary-value { display: block; font-size: 1.4rem; font-weight: 900; color: var(--white); margin-top: 4px; }
 
-.summary-card {
-  padding: 24px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 12px;
-}
+.control-section { display: flex; flex-direction: column; gap: 16px; }
+.section-title { font-size: 0.8rem; color: var(--text-muted); }
+.main-actions { display: flex; flex-direction: column; gap: 12px; }
+.btn.lg { padding: 20px; font-size: 1.1rem; }
 
-.main-highlight {
-  border-left: 6px solid var(--primary);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.card-label {
-  font-size: 0.7rem;
-  font-weight: 900;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
-}
-
-.main-value {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: var(--white);
-  line-height: 1;
-}
-
-.sub-detail {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 900;
-  color: var(--primary);
-  margin-top: 8px;
-}
-
-.secondary-value {
-  display: block;
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: var(--white);
-  margin-top: 4px;
-}
-
-/* Quick Actions Control Section */
-.control-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.section-title {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.main-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.btn.lg {
-  padding: 20px;
-  font-size: 1.1rem;
-}
-
-/* Visual Activity Feed Overhaul */
-.activity-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.small-title {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.view-all {
-  font-size: 0.7rem;
-  font-weight: 900;
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.activity-card {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  align-items: center;
-}
-
-.activity-icon-container {
-  padding: 10px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-}
-
+.activity-section { display: flex; flex-direction: column; gap: 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; }
+.small-title { font-size: 0.8rem; color: var(--text-muted); }
+.view-all { font-size: 0.7rem; font-weight: 900; color: var(--primary); text-decoration: none; }
+.activity-list { display: flex; flex-direction: column; gap: 12px; }
+.activity-card { display: flex; gap: 16px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; align-items: center; }
+.activity-icon-container { padding: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); }
 .success .activity-icon-container { color: var(--primary); background: rgba(204, 255, 0, 0.1); }
 .info .activity-icon-container { color: #3B82F6; background: rgba(59, 130, 246, 0.1); }
 .warning .activity-icon-container { color: #EF4444; background: rgba(239, 68, 68, 0.1); }
-
-.activity-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.activity-text {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--white);
-}
-
-.activity-time {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
+.activity-content { display: flex; flex-direction: column; gap: 4px; }
+.activity-text { font-size: 0.9rem; font-weight: 700; color: var(--white); }
+.activity-time { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); }
 </style>

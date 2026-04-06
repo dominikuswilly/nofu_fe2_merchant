@@ -16,9 +16,9 @@
     </button>
     <button class="nav-item" :class="{ active: currentTab === 'menu' }" @click="selectTab('menu')">
       <div class="nav-icon-wrapper">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21h9"></path><path d="M12 3H3v18h9"></path><path d="M12 3V21"></path><path d="M7 8h2"></path><path d="M7 12h2"></path><path d="M7 16h2"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
       </div>
-      <span class="nav-label">MENU</span>
+      <span class="nav-label">STOK</span>
       <div v-if="currentTab === 'menu'" class="active-dot"></div>
     </button>
     <button class="nav-item" :class="{ active: currentTab === 'stats' }" @click="selectTab('stats')">
@@ -56,7 +56,6 @@ const selectTab = (tab) => {
 
 <style scoped>
 .bottom-nav {
-  /* Layout Refactor: Use standard block positioning within flex column */
   width: 100%;
   background: var(--surface);
   display: grid;
@@ -66,13 +65,13 @@ const selectTab = (tab) => {
   z-index: 9999;
   padding-top: 10px;
   padding-bottom: calc(env(safe-area-inset-bottom, 15px) + 15px);
-  flex-shrink: 0; /* Keep it from being squashed */
+  flex-shrink: 0;
 }
 
 .nav-item {
   background: none;
   color: var(--text-muted);
-  height: 50px; /* Specific height for clarity */
+  height: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -85,23 +84,11 @@ const selectTab = (tab) => {
   -webkit-tap-highlight-color: transparent;
 }
 
-.nav-icon-wrapper {
-  transition: transform 0.2s ease;
-}
+.nav-icon-wrapper { transition: transform 0.2s ease; }
+.nav-label { font-size: 0.65rem; font-weight: 900; letter-spacing: 0.05em; }
 
-.nav-label {
-  font-size: 0.65rem;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-}
-
-.active {
-  color: var(--primary);
-}
-
-.active .nav-icon-wrapper {
-  transform: translateY(-2px);
-}
+.active { color: var(--primary); }
+.active .nav-icon-wrapper { transform: translateY(-2px); }
 
 .active-dot {
   width: 14px;
@@ -112,7 +99,5 @@ const selectTab = (tab) => {
   top: -4px;
 }
 
-.nav-item:active {
-  opacity: 0.6;
-}
+.nav-item:active { opacity: 0.6; }
 </style>
