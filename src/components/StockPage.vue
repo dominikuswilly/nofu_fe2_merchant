@@ -51,63 +51,31 @@
         <!-- Secondary Action Bar -->
         <div class="secondary-actions">
             <button class="action-btn request" @click="openRestockModal(item)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                MINTA
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span>MINTA</span>
             </button>
             <button class="action-btn report" @click="openReportModal(item)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                LAPOR
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <span>LAPOR</span>
             </button>
         </div>
       </div>
     </div>
 
-    <!-- Restock Modal -->
-    <Transition name="fade">
-        <div v-if="activeModal === 'restock'" class="modal-overlay">
-            <div class="modal-sheet">
-                <h2 class="modal-title">MINTA STOK: {{ selectedItem.name.toUpperCase() }}</h2>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">JUMLAH DIBUTUHKAN ({{ selectedItem.unit }})</label>
-                        <input type="number" v-model="modalQty" class="form-input" placeholder="0">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="closeModal">BATAL</button>
-                    <button class="btn btn-primary" @click="submitRestockRequest">KIRIM PERMINTAAN</button>
-                </div>
-            </div>
-        </div>
-    </Transition>
+    <!-- Modular Modals -->
+    <StockRequestModal 
+        :show="activeModal === 'restock'" 
+        :item="selectedItem" 
+        @close="closeModal" 
+        @submit="handleRestockSubmit" 
+    />
 
-    <!-- Report Invalid Modal -->
-    <Transition name="fade">
-        <div v-if="activeModal === 'report'" class="modal-overlay">
-            <div class="modal-sheet report-sheet">
-                <h2 class="modal-title">LAPOR RUSAK: {{ selectedItem.name.toUpperCase() }}</h2>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">JUMLAH RUSAK/EXP ({{ selectedItem.unit }})</label>
-                        <input type="number" v-model="modalQty" class="form-input" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">ALASAN</label>
-                        <select v-model="modalReason" class="form-input">
-                            <option value="Expired">Kadaluarsa (Expired)</option>
-                            <option value="Broken">Rusak Fisik</option>
-                            <option value="Spilled">Tumpah/Terbuang</option>
-                            <option value="Inaccurate">Stok Tidak Akurat</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="closeModal">BATAL</button>
-                    <button class="btn btn-primary danger" @click="submitReport">LAPOR & KURANGI STOK</button>
-                </div>
-            </div>
-        </div>
-    </Transition>
+    <StockReportModal 
+        :show="activeModal === 'report'" 
+        :item="selectedItem" 
+        @close="closeModal" 
+        @submit="handleReportSubmit" 
+    />
 
     <!-- Wastage Warning Toast -->
     <Transition name="fade">
@@ -120,6 +88,8 @@
 
 <script setup>
 import { ref } from 'vue';
+import StockRequestModal from './StockRequestModal.vue';
+import StockReportModal from './StockReportModal.vue';
 
 const props = defineProps({
   inventory: {
@@ -133,8 +103,6 @@ const emit = defineEmits(['update', 'refill-kit', 'request-restock', 'report-inv
 const isWastageMode = ref(false);
 const activeModal = ref(null);
 const selectedItem = ref(null);
-const modalQty = ref(null);
-const modalReason = ref('Expired');
 
 const getStockPercentage = (item) => {
   return Math.round((item.current / item.max) * 100);
@@ -154,14 +122,11 @@ const handleUpdate = (item, amount) => {
 // Modal Logic
 const openRestockModal = (item) => {
     selectedItem.value = item;
-    modalQty.value = 1;
     activeModal.value = 'restock';
 };
 
 const openReportModal = (item) => {
     selectedItem.value = item;
-    modalQty.value = 0.5;
-    modalReason.value = 'Expired';
     activeModal.value = 'report';
 };
 
@@ -170,18 +135,14 @@ const closeModal = () => {
     selectedItem.value = null;
 };
 
-const submitRestockRequest = () => {
-    if (modalQty.value > 0) {
-        emit('request-restock', { item: selectedItem.value, qty: modalQty.value });
-        closeModal();
-    }
+const handleRestockSubmit = (qty) => {
+    emit('request-restock', { item: selectedItem.value, qty });
+    closeModal();
 };
 
-const submitReport = () => {
-    if (modalQty.value > 0) {
-        emit('report-invalid', { item: selectedItem.value, qty: modalQty.value, reason: modalReason.value });
-        closeModal();
-    }
+const handleReportSubmit = (qty, reason) => {
+    emit('report-invalid', { item: selectedItem.value, qty, reason });
+    closeModal();
 };
 </script>
 
@@ -221,78 +182,44 @@ const submitReport = () => {
 
 /* Controls */
 .stock-controls { display: flex; gap: 12px; align-items: center; }
-.ctrl-btn { flex: 1; height: 64px; background: var(--bg-mobile); border: 1px solid var(--border); color: var(--white); font-size: 1.8rem; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ctrl-btn { flex: 1; height: 64px; background: var(--bg-mobile); border: 1px solid var(--border); color: var(--white); font-size: 1.8rem; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; }
 .quick-steps { flex: 2; display: flex; }
-.quick-btn { width: 100%; height: 64px; background: rgba(204, 255, 0, 0.1); border: 1px solid var(--primary); color: var(--primary); font-size: 1rem; font-weight: 900; cursor: pointer; }
+.quick-btn { width: 100%; height: 64px; background: rgba(204, 255, 0, 0.1); border: 1px solid var(--primary); color: var(--primary); font-size: 1rem; font-weight: 900; cursor: pointer; border-radius: 8px; }
 
-/* Secondary Action Bar */
+/* Secondary Action Bar - FIXED HIGH CONTRAST */
 .secondary-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 2px solid var(--border);
 }
 
 .action-btn {
-    height: 48px;
-    background: var(--bg-mobile);
+    height: 54px;
+    background: rgba(255, 255, 255, 0.05); /* Lighter surface */
     border: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.75rem;
+    color: var(--white); /* High contrast */
+    font-size: 0.8rem;
     font-weight: 900;
     letter-spacing: 0.05em;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 8px;
 }
 
-.action-btn:active { background: var(--border); color: var(--white); }
+.action-btn svg { opacity: 0.9; }
 
-/* Modal Overlays */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(8px);
-    z-index: 12000;
-    display: flex;
-    align-items: flex-end;
-}
+.action-btn.request:active { background: rgba(59, 130, 246, 0.2); border-color: #3B82F6; color: #3B82F6; transform: scale(0.96); }
+.action-btn.report:active { background: rgba(239, 68, 68, 0.2); border-color: #EF4444; color: #EF4444; transform: scale(0.96); }
 
-.modal-sheet {
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-    background: var(--bg-mobile);
-    border-top: 4px solid var(--primary);
-    padding: 32px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.report-sheet { border-top-color: #EF4444; }
-
-.modal-title { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.5px; }
-
-.modal-body { display: flex; flex-direction: column; gap: 20px; }
-.form-group { display: flex; flex-direction: column; gap: 10px; }
-.form-label { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); }
-.form-input { 
-    background: var(--surface); 
-    border: 1px solid var(--border); 
-    padding: 18px; 
-    color: var(--white); 
-    font-size: 1.2rem; 
-    font-weight: 900; 
-}
-
-.modal-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 12px; }
-.btn.danger { background: #EF4444; border-color: #EF4444; }
+/* Visibility Improvements for retail environment */
+.stock-card:active { border-color: var(--primary); }
 
 .wastage-toast { position: fixed; bottom: 110px; left: 20px; right: 20px; background: #EF4444; color: white; padding: 12px; text-align: center; font-size: 0.7rem; font-weight: 900; z-index: 100; }
 

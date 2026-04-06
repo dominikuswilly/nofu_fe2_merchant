@@ -266,7 +266,7 @@ const handleLoginSuccess = () => {
 <style scoped>
 /* Scoped Styles for App.vue deriving from global mobile aesthetics */
 .page-container {
-  padding: 24px 20px 40px;
+  padding: 24px 20px 120px; /* Increased bottom padding for nav clearance */
   display: flex;
   flex-direction: column;
   gap: 32px;
