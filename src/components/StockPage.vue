@@ -8,17 +8,6 @@
       <p class="kit-hint">Isi ulang semua stok ke standar pagi hari dalam satu klik.</p>
     </div>
 
-    <!-- Wastage Mode Toggle -->
-    <div class="wastage-toggle-container">
-        <label class="wastage-label">
-            <input type="checkbox" v-model="isWastageMode" class="hidden-check">
-            <div class="custom-toggle" :class="{ 'wastage-active': isWastageMode }">
-                <div class="toggle-dot"></div>
-                <span class="toggle-text">{{ isWastageMode ? 'MODE WASTAGE: AKTIF' : 'MODE NORMAL' }}</span>
-            </div>
-        </label>
-    </div>
-
     <!-- Inventory List -->
     <div class="inventory-list">
       <div v-for="item in inventory" :key="item.id" class="stock-card" :class="{ 'low-stock': getStockPercentage(item) < 10 }">
@@ -35,17 +24,6 @@
               :style="{ width: `${getStockPercentage(item)}%`, backgroundColor: getStatusColor(getStockPercentage(item)) }"
             ></div>
           </div>
-        </div>
-
-        <!-- Thumb-Zone Controls -->
-        <div class="stock-controls">
-          <button class="ctrl-btn minus" @click="handleUpdate(item, -item.step)">-</button>
-          
-          <div class="quick-steps">
-            <button class="quick-btn" @click="handleUpdate(item, item.quickStep)">+{{ item.quickStep }}</button>
-          </div>
-
-          <button class="ctrl-btn plus" @click="handleUpdate(item, item.step)">+</button>
         </div>
 
         <!-- Secondary Action Bar -->
@@ -76,13 +54,6 @@
         @close="closeModal" 
         @submit="handleReportSubmit" 
     />
-
-    <!-- Wastage Warning Toast -->
-    <Transition name="fade">
-        <div v-if="isWastageMode" class="wastage-toast">
-            PENGURANGAN STOK AKAN DICATAT SEBAGAI WASTAGE (SIASA)
-        </div>
-    </Transition>
   </div>
 </template>
 
@@ -100,7 +71,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update', 'refill-kit', 'request-restock', 'report-invalid']);
 
-const isWastageMode = ref(false);
 const activeModal = ref(null);
 const selectedItem = ref(null);
 
@@ -112,11 +82,6 @@ const getStatusColor = (percent) => {
   if (percent < 10) return '#EF4444'; // Red
   if (percent < 25) return '#FFFF00'; // Yellow
   return '#CCFF00'; // Lime
-};
-
-const handleUpdate = (item, amount) => {
-  if (isWastageMode.value && amount > 0) return;
-  emit('update', item.id, amount);
 };
 
 // Modal Logic
@@ -158,16 +123,6 @@ const handleReportSubmit = (qty, reason) => {
 .refill-btn { margin-bottom: 12px; font-size: 1.2rem; }
 .kit-hint { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 
-/* Wastage Toggle */
-.wastage-toggle-container { display: flex; justify-content: center; }
-.hidden-check { display: none; }
-.custom-toggle { background: var(--surface); border: 1px solid var(--border); padding: 12px 24px; border-radius: 99px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.3s; }
-.toggle-dot { width: 12px; height: 12px; background: var(--border); border-radius: 50%; transition: all 0.3s; }
-.toggle-text { font-size: 0.8rem; font-weight: 900; color: var(--text-muted); }
-.wastage-active { border-color: #EF4444; background: rgba(239, 68, 68, 0.1); }
-.wastage-active .toggle-dot { background: #EF4444; box-shadow: 0 0 10px #EF4444; }
-.wastage-active .toggle-text { color: #EF4444; }
-
 /* Inventory Cards */
 .inventory-list { display: flex; flex-direction: column; gap: 16px; }
 .stock-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 12px; display: flex; flex-direction: column; gap: 20px; transition: border-color 0.3s; }
@@ -179,12 +134,6 @@ const handleReportSubmit = (qty, reason) => {
 /* Progress Bar */
 .progress-container { height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 99px; overflow: hidden; }
 .progress-bar { height: 100%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-
-/* Controls */
-.stock-controls { display: flex; gap: 12px; align-items: center; }
-.ctrl-btn { flex: 1; height: 64px; background: var(--bg-mobile); border: 1px solid var(--border); color: var(--white); font-size: 1.8rem; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; }
-.quick-steps { flex: 2; display: flex; }
-.quick-btn { width: 100%; height: 64px; background: rgba(204, 255, 0, 0.1); border: 1px solid var(--primary); color: var(--primary); font-size: 1rem; font-weight: 900; cursor: pointer; border-radius: 8px; }
 
 /* Secondary Action Bar - FIXED HIGH CONTRAST */
 .secondary-actions {
@@ -220,8 +169,6 @@ const handleReportSubmit = (qty, reason) => {
 
 /* Visibility Improvements for retail environment */
 .stock-card:active { border-color: var(--primary); }
-
-.wastage-toast { position: fixed; bottom: 110px; left: 20px; right: 20px; background: #EF4444; color: white; padding: 12px; text-align: center; font-size: 0.7rem; font-weight: 900; z-index: 100; }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
