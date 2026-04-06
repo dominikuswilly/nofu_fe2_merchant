@@ -15,9 +15,9 @@ const salesToday = ref('RP 2.540.000');
 const todayBalance = ref('RP 12.850.000');
 
 const recentActivity = ref([
-  { time: '13:42', text: 'Pesanan #204 selesai', type: 'success' },
-  { time: '13:30', text: 'Pesanan #205 diterima', type: 'info' },
-  { time: '13:15', text: 'Stok Espresso habis', type: 'warning' },
+  { id: 1, time: '13:42', text: 'Pesanan #204 selesai', type: 'success' },
+  { id: 2, time: '13:30', text: 'Pesanan #205 diterima', type: 'info' },
+  { id: 3, time: '13:15', text: 'Stok Espresso habis', type: 'warning' },
 ]);
 
 // CENTRALIZED ORDER STATE
@@ -69,6 +69,7 @@ const processCheckout = () => {
     
     // Success flow
     recentActivity.value.unshift({
+      id: Date.now(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       text: `Pesanan #${Math.floor(Math.random() * 900) + 100} checkout berhasil`,
       type: 'success'
@@ -92,9 +93,31 @@ const refillDailyKit = () => {
         item.current = item.max;
     });
     recentActivity.value.unshift({
+      id: Date.now(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       text: 'Stok Harian (Daily Kit) telah diisi ulang',
       type: 'info'
+    });
+};
+
+const handleRequestRestock = ({ item, qty }) => {
+    recentActivity.value.unshift({
+      id: Date.now(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: `Permintaan ${qty} ${item.unit} ${item.name} dikirim ke gudang`,
+      type: 'info'
+    });
+};
+
+const handleReportInvalid = ({ item, qty, reason }) => {
+    // Deduct stock
+    updateStock(item.id, -qty);
+    
+    recentActivity.value.unshift({
+      id: Date.now(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: `Laporan: ${qty} ${item.unit} ${item.name} rusak (${reason})`,
+      type: 'warning'
     });
 };
 
@@ -148,7 +171,7 @@ const handleLoginSuccess = () => {
             <a href="#" class="view-all">LIHAT SEMUA</a>
           </div>
           <div class="activity-list">
-            <div v-for="item in recentActivity" :key="item.time" class="activity-card" :class="item.type">
+            <div v-for="item in recentActivity" :key="item.id" class="activity-card" :class="item.type">
               <div class="activity-icon-container">
                 <svg v-if="item.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 <svg v-if="item.type === 'info'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -178,6 +201,8 @@ const handleLoginSuccess = () => {
             :inventory="inventory" 
             @update="updateStock" 
             @refill-kit="refillDailyKit"
+            @request-restock="handleRequestRestock"
+            @report-invalid="handleReportInvalid"
           />
       </div>
 
@@ -244,7 +269,7 @@ const handleLoginSuccess = () => {
 </template>
 
 <style scoped>
-/* Scoped Styles for App.vue derived from global mobile aesthetics */
+/* Scoped Styles derived from global mobile aesthetics */
 .page-container {
   padding: 24px 20px 40px;
   display: flex;
@@ -293,8 +318,8 @@ const handleLoginSuccess = () => {
 .checkout-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
   z-index: 11000;
   display: flex;
   align-items: flex-end;
@@ -330,7 +355,7 @@ const handleLoginSuccess = () => {
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-/* Dashboard UI Parts */
+/* Dashboard UI */
 .dashboard-summary { display: flex; flex-direction: column; gap: 16px; }
 .summary-card { padding: 24px; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; }
 .main-highlight { border-left: 6px solid var(--primary); }
