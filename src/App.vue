@@ -375,7 +375,19 @@ const handleLogout = () => {
 .section-header { display: flex; justify-content: space-between; align-items: center; }
 .small-title { font-size: 0.8rem; color: var(--text-muted); }
 .view-all { font-size: 0.7rem; font-weight: 900; color: var(--primary); text-decoration: none; }
-.activity-list { display: flex; flex-direction: column; gap: 12px; }
+.activity-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  max-height: 400px; 
+  overflow-y: auto; 
+  padding-right: 8px;
+}
+
+/* Scoped Scrollbar for Activity List */
+.activity-list::-webkit-scrollbar { width: 4px; }
+.activity-list::-webkit-scrollbar-track { background: transparent; }
+.activity-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .activity-card { display: flex; gap: 16px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; align-items: center; }
 .activity-icon-container { padding: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); }
 .success .activity-icon-container { color: var(--primary); background: rgba(204, 255, 0, 0.1); }
