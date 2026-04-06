@@ -33,6 +33,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { DRINK_MENU } from '../data/mockData';
 
 const props = defineProps({
   cart: {
@@ -46,20 +47,8 @@ const emit = defineEmits(['add', 'remove']);
 const categories = ['KOPI', 'COKELAT', 'TEH', 'LAINNYA'];
 const activeCategory = ref('KOPI');
 
-const mockItems = [
-  { id: 1, category: 'KOPI', name: 'Espresso Single', price: 15000 },
-  { id: 2, category: 'KOPI', name: 'Americano Ice', price: 22000 },
-  { id: 3, category: 'KOPI', name: 'Cafe Latte', price: 28000 },
-  { id: 4, category: 'KOPI', name: 'Cappuccino', price: 28000 },
-  { id: 5, category: 'COKELAT', name: 'Choco Classic', price: 25000 },
-  { id: 6, category: 'COKELAT', name: 'Dark Hazelnut', price: 32000 },
-  { id: 7, category: 'TEH', name: 'Earl Grey Tea', price: 18000 },
-  { id: 8, category: 'TEH', name: 'Matcha Latte', price: 25000 },
-  { id: 9, category: 'LAINNYA', name: 'Mineral Water', price: 5000 },
-];
-
 const filteredItems = computed(() => {
-  return mockItems.filter(item => item.category === activeCategory.value);
+  return DRINK_MENU.filter(item => item.category === activeCategory.value);
 });
 
 const getQty = (id) => {
@@ -152,6 +141,7 @@ const getQty = (id) => {
   justify-content: center;
   background: var(--border);
   color: var(--white);
+  font-size: 1.8rem;
   font-weight: 900;
   border-radius: 4px;
   transition: all 0.1s;

@@ -6,6 +6,9 @@ import LoginPage from './components/LoginPage.vue';
 import OrderPage from './components/OrderPage.vue';
 import StockPage from './components/StockPage.vue';
 
+// Import Centralized Mock Data
+import { INITIAL_ACTIVITY, INITIAL_INVENTORY } from './data/mockData';
+
 // Authentication State
 const isAuthenticated = ref(false);
 
@@ -14,11 +17,8 @@ const isOnline = ref(true);
 const salesToday = ref('RP 2.540.000');
 const todayBalance = ref('RP 12.850.000');
 
-const recentActivity = ref([
-  { id: 1, time: '13:42', text: 'Pesanan #204 selesai', type: 'success' },
-  { id: 2, time: '13:30', text: 'Pesanan #205 diterima', type: 'info' },
-  { id: 3, time: '13:15', text: 'Stok Espresso habis', type: 'warning' },
-]);
+// Use Centralized Data for initialization
+const recentActivity = ref([...INITIAL_ACTIVITY]);
 
 // CENTRALIZED ORDER STATE
 const cart = ref([]);
@@ -26,12 +26,7 @@ const showCheckout = ref(false);
 const processing = ref(false);
 
 // CENTRALIZED INVENTORY STATE (Coffee Cart Specific)
-const inventory = ref([
-    { id: 1, name: 'Biji Espresso', current: 1.2, max: 2.0, unit: 'kg', step: 0.1, quickStep: 0.5 },
-    { id: 2, name: 'Susu Segar', current: 3, max: 10, unit: 'Liter', step: 1, quickStep: 1.0 },
-    { id: 3, name: 'Paper Cups (L)', current: 12, max: 50, unit: 'Pcs', step: 1, quickStep: 10 },
-    { id: 4, name: 'Es Batu', current: 0.5, max: 5.0, unit: 'kg', step: 0.5, quickStep: 1.0 },
-]);
+const inventory = ref([...INITIAL_INVENTORY]);
 
 const cartCount = computed(() => {
   return cart.value.reduce((acc, item) => acc + item.qty, 0);
@@ -269,7 +264,7 @@ const handleLoginSuccess = () => {
 </template>
 
 <style scoped>
-/* Scoped Styles derived from global mobile aesthetics */
+/* Scoped Styles for App.vue deriving from global mobile aesthetics */
 .page-container {
   padding: 24px 20px 40px;
   display: flex;
@@ -355,7 +350,7 @@ const handleLoginSuccess = () => {
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-/* Dashboard UI */
+/* Dashboard UI Part */
 .dashboard-summary { display: flex; flex-direction: column; gap: 16px; }
 .summary-card { padding: 24px; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; }
 .main-highlight { border-left: 6px solid var(--primary); }
