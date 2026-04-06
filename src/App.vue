@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import TopNav from './components/TopNav.vue';
 import BottomNav from './components/BottomNav.vue';
 import LoginPage from './components/LoginPage.vue';
+import OrderPage from './components/OrderPage.vue';
 
 // Authentication State
 const isAuthenticated = ref(false);
@@ -18,6 +19,57 @@ const recentActivity = ref([
   { time: '13:15', text: 'Stok Espresso habis', type: 'warning' },
 ]);
 
+// CENTRALIZED ORDER STATE
+const cart = ref([]);
+const showCheckout = ref(false);
+const processing = ref(false);
+
+const cartCount = computed(() => {
+  return cart.value.reduce((acc, item) => acc + item.qty, 0);
+});
+
+const cartTotal = computed(() => {
+  return cart.value.reduce((acc, item) => acc + (item.price * item.qty), 0);
+});
+
+const addToCart = (item) => {
+  const existing = cart.value.find(i => i.id === item.id);
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.value.push({ ...item, qty: 1 });
+  }
+};
+
+const removeFromCart = (item) => {
+  const index = cart.value.findIndex(i => i.id === item.id);
+  if (index > -1) {
+    if (cart.value[index].qty > 1) {
+      cart.value[index].qty--;
+    } else {
+      cart.value.splice(index, 1);
+    }
+  }
+};
+
+const processCheckout = () => {
+  processing.value = true;
+  setTimeout(() => {
+    processing.value = false;
+    showCheckout.value = false;
+    
+    // Success flow
+    recentActivity.value.unshift({
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: `Pesanan #${Math.floor(Math.random() * 900) + 100} checkout berhasil`,
+      type: 'success'
+    });
+    
+    cart.value = [];
+    currentTab.value = 'home';
+  }, 1500);
+};
+
 const handleLoginSuccess = () => {
   isAuthenticated.value = true;
 };
@@ -30,7 +82,9 @@ const handleLoginSuccess = () => {
 
     <!-- Main structural components -->
     <div class="scroll-container" id="main-scroll">
-      <div class="page-container animate-slide-up">
+      
+      <!-- DASHBOARD TAB -->
+      <div v-if="currentTab === 'home'" class="page-container animate-slide-up">
         <!-- Grouped Sales & Balance Summary -->
         <section class="dashboard-summary">
           <div class="summary-card main-highlight">
@@ -54,7 +108,7 @@ const handleLoginSuccess = () => {
         <section class="control-section">
           <h2 class="section-title">KONTROL TRANSAKSI</h2>
           <div class="main-actions">
-            <button class="btn btn-primary lg">PESANAN BARU</button>
+            <button @click="currentTab = 'orders'" class="btn btn-primary lg">PESANAN BARU</button>
             <button class="btn btn-secondary lg">KELOLA STOK</button>
           </div>
         </section>
@@ -80,10 +134,71 @@ const handleLoginSuccess = () => {
           </div>
         </section>
       </div>
+
+      <!-- ORDERS TAB CONTENT ONLY -->
+      <div v-else-if="currentTab === 'orders'" class="page-container animate-slide-up">
+        <OrderPage 
+          :cart="cart" 
+          @add="addToCart" 
+          @remove="removeFromCart"
+        />
+      </div>
+
+      <!-- OTHER TABS (Placeholders) -->
+      <div v-else class="page-container animate-slide-up">
+        <section class="placeholder-section">
+          <h2>FITUR {{ currentTab.toUpperCase() }} SEGERA DATANG</h2>
+          <button @click="currentTab = 'home'" class="btn btn-secondary">KEMBALI KE BERANDA</button>
+        </section>
+      </div>
     </div>
+
+    <!-- FLOATING CART AS FLEX SIBLING -->
+    <!-- This ensures it's always above the BottomNav using structural layout -->
+    <Transition name="cart-slide">
+      <div v-if="cartCount > 0 && currentTab === 'orders'" class="floating-cart-wrapper" @click="showCheckout = true">
+        <div class="floating-cart">
+            <div class="cart-details">
+              <span class="total-qty">{{ cartCount }} ITEM</span>
+              <span class="total-price">RP {{ cartTotal.toLocaleString('id-ID') }}</span>
+            </div>
+            <button class="checkout-now-btn">CEK OUT →</button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Persistent Bottom Navigation -->
     <BottomNav v-model="currentTab" />
+
+    <!-- Global Checkout Overlay -->
+    <Transition name="fade">
+      <div v-if="showCheckout" class="checkout-overlay">
+        <div class="checkout-sheet">
+          <div class="sheet-header">
+            <h2 class="sheet-title">RINGKASAN PESANAN</h2>
+            <button @click="showCheckout = false" class="close-sheet">TUTUP</button>
+          </div>
+          
+          <div class="order-summary-list">
+            <div v-for="item in cart" :key="item.id" class="receipt-item">
+              <span class="r-qty">{{ item.qty }}x</span>
+              <span class="r-name">{{ item.name }}</span>
+              <span class="r-price">RP {{ (item.price * item.qty).toLocaleString('id-ID') }}</span>
+            </div>
+          </div>
+
+          <div class="final-checkout-section">
+            <div class="total-row">
+              <span class="label">TOTAL BAYAR</span>
+              <span class="value">RP {{ cartTotal.toLocaleString('id-ID') }}</span>
+            </div>
+            <button class="btn btn-primary lg full-width" @click="processCheckout" :disabled="processing">
+              {{ processing ? 'MEMPROSES...' : 'BAYAR SEKARANG' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </template>
 
   <!-- Login View -->
@@ -99,6 +214,122 @@ const handleLoginSuccess = () => {
   flex-direction: column;
   gap: 32px;
 }
+
+.placeholder-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 50vh;
+  text-align: center;
+}
+
+/* Floating Cart as Structural Sibling */
+.floating-cart-wrapper {
+  padding: 10px 20px;
+  background: var(--bg-mobile);
+  border-top: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+.floating-cart {
+  background: var(--primary);
+  color: black;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  box-shadow: 0 4px 20px rgba(204, 255, 0, 0.4);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.cart-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.total-qty { font-size: 0.65rem; font-weight: 900; opacity: 0.7; }
+.total-price { font-size: 1.2rem; font-weight: 900; }
+.checkout-now-btn { font-size: 0.9rem; font-weight: 900; letter-spacing: 0.05em; background: none; color: black; border: none; padding: 0; }
+
+/* Transitions */
+.cart-slide-enter-active, .cart-slide-leave-active { transition: all 0.3s ease-out; }
+.cart-slide-enter-from, .cart-slide-leave-to { transform: translateY(100%); opacity: 0; }
+
+/* Checkout Overlay Style */
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  z-index: 11000;
+  display: flex;
+  align-items: flex-end;
+}
+
+.checkout-sheet {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg-mobile);
+  border-top: 4px solid var(--primary);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sheet-title { font-size: 1.2rem; }
+.close-sheet { background: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 900; }
+
+.order-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.receipt-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.r-qty { color: var(--primary); width: 30px; }
+.r-name { flex: 1; }
+.r-price { opacity: 0.8; }
+
+.final-checkout-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-row .label { font-size: 0.8rem; font-weight: 900; color: var(--text-muted); }
+.total-row .value { font-size: 1.8rem; font-weight: 900; color: var(--white); }
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* Dashboard Summary Boxes */
 .dashboard-summary {
