@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import TopNav from './components/TopNav.vue';
 import BottomNav from './components/BottomNav.vue';
 import LoginPage from './components/LoginPage.vue';
@@ -24,9 +24,21 @@ const recentActivity = ref([...INITIAL_ACTIVITY]);
 const cart = ref([]);
 const showCheckout = ref(false);
 const processing = ref(false);
+const checkoutStep = ref('summary'); // 'summary' | 'payment' | 'confirmation'
+const selectedPaymentMethod = ref(null);
 
-// CENTRALIZED INVENTORY STATE (Coffee Cart Specific)
-const inventory = ref([...INITIAL_INVENTORY]);
+// Assets
+const qrisMockup = 'src/assets/qris_mockup.png'; // Handled via system-generated path in final implementation or direct reference
+
+// Reset checkout step when overlay closes
+watch(showCheckout, (newVal) => {
+  if (!newVal) {
+    setTimeout(() => {
+        checkoutStep.value = 'summary';
+        selectedPaymentMethod.value = null;
+    }, 300);
+  }
+});
 
 const cartCount = computed(() => {
   return cart.value.reduce((acc, item) => acc + item.qty, 0);
@@ -56,6 +68,15 @@ const removeFromCart = (item) => {
   }
 };
 
+const startPayment = (method) => {
+  selectedPaymentMethod.value = method;
+  checkoutStep.value = 'confirmation';
+};
+
+const handleFinalize = () => {
+    processCheckout();
+};
+
 const processCheckout = () => {
   processing.value = true;
   setTimeout(() => {
@@ -66,7 +87,7 @@ const processCheckout = () => {
     recentActivity.value.unshift({
       id: Date.now(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `Pesanan #${Math.floor(Math.random() * 900) + 100} checkout berhasil`,
+      text: `Pesanan #${Math.floor(Math.random() * 900) + 100} (${selectedPaymentMethod.value}) berhasil`,
       type: 'success'
     });
     
@@ -125,6 +146,9 @@ const handleLogout = () => {
   currentTab.value = 'home';
   cart.value = []; // Clear cart on logout
 };
+
+// CENTRALIZED INVENTORY STATE (Coffee Cart Specific)
+const inventory = ref([...INITIAL_INVENTORY]);
 </script>
 
 <template>
@@ -236,28 +260,101 @@ const handleLogout = () => {
     <Transition name="fade">
       <div v-if="showCheckout" class="checkout-overlay">
         <div class="checkout-sheet">
-          <div class="sheet-header">
-            <h2 class="sheet-title">RINGKASAN PESANAN</h2>
-            <button @click="showCheckout = false" class="close-sheet">TUTUP</button>
-          </div>
           
-          <div class="order-summary-list">
-            <div v-for="item in cart" :key="item.id" class="receipt-item">
-              <span class="r-qty">{{ item.qty }}x</span>
-              <span class="r-name">{{ item.name }}</span>
-              <span class="r-price">RP {{ (item.price * item.qty).toLocaleString('id-ID') }}</span>
+          <!-- STEP 1: SUMMARY -->
+          <template v-if="checkoutStep === 'summary'">
+            <div class="sheet-header">
+              <h2 class="sheet-title">RINGKASAN PESANAN</h2>
+              <button @click="showCheckout = false" class="close-sheet">TUTUP</button>
             </div>
-          </div>
+            
+            <div class="order-summary-list">
+              <div v-for="item in cart" :key="item.id" class="receipt-item">
+                <span class="r-qty">{{ item.qty }}x</span>
+                <span class="r-name">{{ item.name }}</span>
+                <span class="r-price">RP {{ (item.price * item.qty).toLocaleString('id-ID') }}</span>
+              </div>
+            </div>
 
-          <div class="final-checkout-section">
-            <div class="total-row">
-              <span class="label">TOTAL BAYAR</span>
-              <span class="value">RP {{ cartTotal.toLocaleString('id-ID') }}</span>
+            <div class="final-checkout-section">
+              <div class="total-row">
+                <span class="label">TOTAL BAYAR</span>
+                <span class="value">RP {{ cartTotal.toLocaleString('id-ID') }}</span>
+              </div>
+              <button class="btn btn-primary lg full-width" @click="checkoutStep = 'payment'">
+                BAYAR SEKARANG
+              </button>
             </div>
-            <button class="btn btn-primary lg full-width" @click="processCheckout" :disabled="processing">
-              {{ processing ? 'MEMPROSES...' : 'BAYAR SEKARANG' }}
-            </button>
-          </div>
+          </template>
+
+          <!-- STEP 2: PAYMENT METHOD SELECTION -->
+          <template v-else-if="checkoutStep === 'payment'">
+            <div class="sheet-header">
+              <h2 class="sheet-title">PILIH PEMBAYARAN</h2>
+              <button @click="checkoutStep = 'summary'" class="close-sheet" :disabled="processing">KEMBALI</button>
+            </div>
+
+            <div class="payment-selection-area">
+              <button class="pm-btn cash" @click="startPayment('TUNAI')" :disabled="processing">
+                <div class="pm-icon">💵</div>
+                <div class="pm-info">
+                    <span class="pm-name">TUNAI / CASH</span>
+                    <span class="pm-desc">Terima uang kertas/koin</span>
+                </div>
+              </button>
+
+              <button class="pm-btn qris" @click="startPayment('QRIS')" :disabled="processing">
+                <div class="pm-icon">📱</div>
+                <div class="pm-info">
+                    <span class="pm-name">QRIS DANA/OVO/DLL</span>
+                    <span class="pm-desc">Scan kode QR dinamis</span>
+                </div>
+              </button>
+            </div>
+          </template>
+
+          <!-- STEP 3: PAYMENT CONFIRMATION (REFINED FLOW) -->
+          <template v-else-if="checkoutStep === 'confirmation'">
+            <div class="sheet-header">
+                <h2 class="sheet-title">KONFIRMASI: {{ selectedPaymentMethod }}</h2>
+                <button @click="checkoutStep = 'payment'" class="close-sheet" :disabled="processing">GANTI METODE</button>
+            </div>
+
+            <div class="confirmation-flow-content">
+                <!-- TOTAL DISPLAY -->
+                <div class="payment-final-total">
+                    <span class="label">TOTAL TAGIHAN</span>
+                    <span class="value">RP {{ cartTotal.toLocaleString('id-ID') }}</span>
+                </div>
+
+                <!-- CASH FLOW -->
+                <div v-if="selectedPaymentMethod === 'TUNAI'" class="cash-flow">
+                    <div class="cash-instruction">
+                        <p>Silakan terima uang tunai dari pelanggan sebesar total tagihan di atas.</p>
+                        <p class="highlight">Pastikan jumlah uang sudah sesuai.</p>
+                    </div>
+                </div>
+
+                <!-- QRIS FLOW -->
+                <div v-if="selectedPaymentMethod === 'QRIS'" class="qris-flow">
+                    <div class="qris-mockup-container">
+                        <img src="./assets/qris_mockup.png" alt="QRIS NOFU" class="qris-img">
+                    </div>
+                    <p class="qris-hint">Scan QR di atas untuk membayar melalui aplikasi E-Wallet apa pun.</p>
+                </div>
+            </div>
+
+            <div class="final-checkout-section">
+                <button class="btn btn-primary lg full-width" @click="handleFinalize" :disabled="processing">
+                    {{ processing ? 'MEMPROSES...' : (selectedPaymentMethod === 'TUNAI' ? 'KONFIRMASI TERIMA UANG' : 'SAYASUDAH SCAN') }}
+                </button>
+            </div>
+
+            <div v-if="processing" class="payment-processing-status">
+                <div class="spinner"></div>
+                <span>MENYELESAIKAN PESANAN...</span>
+            </div>
+          </template>
         </div>
       </div>
     </Transition>
@@ -335,7 +432,7 @@ const handleLogout = () => {
   padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
 .sheet-header { display: flex; justify-content: space-between; align-items: center; }
@@ -375,6 +472,7 @@ const handleLogout = () => {
 .section-header { display: flex; justify-content: space-between; align-items: center; }
 .small-title { font-size: 0.8rem; color: var(--text-muted); }
 .view-all { font-size: 0.7rem; font-weight: 900; color: var(--primary); text-decoration: none; }
+
 .activity-list { 
   display: flex; 
   flex-direction: column; 
@@ -388,6 +486,7 @@ const handleLogout = () => {
 .activity-list::-webkit-scrollbar { width: 4px; }
 .activity-list::-webkit-scrollbar-track { background: transparent; }
 .activity-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
 .activity-card { display: flex; gap: 16px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; align-items: center; }
 .activity-icon-container { padding: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); }
 .success .activity-icon-container { color: var(--primary); background: rgba(204, 255, 0, 0.1); }
@@ -396,4 +495,35 @@ const handleLogout = () => {
 .activity-content { display: flex; flex-direction: column; gap: 4px; }
 .activity-text { font-size: 0.9rem; font-weight: 700; color: var(--white); }
 .activity-time { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); }
+
+/* PAYMENT SELECTION STYLING */
+.payment-selection-area { display: flex; flex-direction: column; gap: 16px; }
+.pm-btn { width: 100%; display: flex; align-items: center; gap: 20px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; transition: all 0.2s; }
+.pm-btn:active { transform: scale(0.98); border-color: var(--primary); }
+.pm-btn:disabled { opacity: 0.5; cursor: wait; }
+.pm-icon { font-size: 2rem; background: rgba(255,255,255,0.05); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+.pm-info { display: flex; flex-direction: column; align-items: flex-start; }
+.pm-name { font-size: 1.1rem; font-weight: 900; color: var(--white); }
+.pm-desc { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+
+.pm-btn.cash:active { background: rgba(204, 255, 0, 0.1); }
+.pm-btn.qris:active { background: rgba(59, 130, 246, 0.1); border-color: #3B82F6; }
+
+.payment-processing-status { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px; text-align: center; font-weight: 900; color: var(--primary); font-size: 0.8rem; letter-spacing: 0.05em; }
+.spinner { width: 30px; height: 30px; border: 4px solid rgba(204, 255, 0, 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+/* REFINED CONFIRMATION STYLES */
+.confirmation-flow-content { display: flex; flex-direction: column; gap: 24px; }
+.payment-final-total { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.payment-final-total .label { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); letter-spacing: 0.1em; }
+.payment-final-total .value { font-size: 2.2rem; font-weight: 900; color: var(--primary); }
+
+.cash-instruction { text-align: center; color: var(--white); font-weight: 700; line-height: 1.6; padding: 0 20px; }
+.cash-instruction .highlight { color: var(--primary); margin-top: 10px; font-size: 0.9rem; }
+
+.qris-mockup-container { width: 100%; display: flex; justify-content: center; }
+.qris-img { width: 100%; max-width: 240px; border-radius: 12px; border: 4px solid var(--white); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.qris-hint { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); padding: 0 30px; line-height: 1.4; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
